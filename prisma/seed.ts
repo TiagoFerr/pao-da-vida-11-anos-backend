@@ -1,5 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
-import * as argon2 from 'argon2';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -304,7 +303,7 @@ const SETORES_DATA = [
 ];
 
 async function main() {
-  console.log('Iniciando o Seed da base de dados dos 120 Cultos nos Lares...');
+  console.log('Iniciando o Seed dos 14 Setores e Bairros de Mossoró...');
 
   for (const s of SETORES_DATA) {
     const setor = await prisma.setor.upsert({
@@ -345,41 +344,7 @@ async function main() {
     }
   }
 
-  const adminEmail = process.env.ADMIN_DEFAULT_EMAIL || 'admin@paodavida.org.br';
-  const adminNome = process.env.ADMIN_DEFAULT_NAME || 'Pastor Gabriel';
-  const adminPass = process.env.ADMIN_DEFAULT_PASSWORD || 'AltereEssaSenhaNoPrimeiroLogin123!';
-
-  const adminExistente = await prisma.usuario.findUnique({
-    where: { email: adminEmail },
-  });
-
-  if (!adminExistente) {
-    const senhaHash = await argon2.hash(adminPass);
-
-    const pessoaAdmin = await prisma.pessoa.create({
-      data: {
-        nome: adminNome,
-        email: adminEmail,
-        tipoVinculo: 'MEMBRO_ATIVO',
-      },
-    });
-
-    await prisma.usuario.create({
-      data: {
-        pessoaId: pessoaAdmin.id,
-        email: adminEmail,
-        senhaHash,
-        role: Role.PASTOR,
-        ativo: true,
-      },
-    });
-
-    console.log(`Super Admin (${adminNome} <${adminEmail}>) criado com sucesso.`);
-  } else {
-    console.log(`Super Admin (${adminEmail}) já existente.`);
-  }
-
-  console.log('Seed concluído com sucesso!');
+  console.log('Seed territorial de Setores e Bairros concluído com sucesso!');
 }
 
 main()
