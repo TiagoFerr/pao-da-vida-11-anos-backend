@@ -6,3 +6,232 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+enum Role {
+  ADMIN
+  PASTOR
+  COORDENADOR
+  LIDER
+  ANFITRIAO
+}
+
+enum StatusCulto {
+  PLANEJADO
+  CONFIRMADO
+  EM_ANDAMENTO
+  REALIZADO
+  CANCELADO
+}
+
+enum TipoVinculo {
+  MEMBRO_ATIVO
+  VISITANTE
+  FREQUENTADOR
+}
+
+enum TipoDecisao {
+  ACEITOU_JESUS
+  RECONCILIACAO
+  PEDIDO_ORACAO
+}
+
+enum StatusDiscipulado {
+  PENDENTE
+  EM_CONTATO
+  DISCIPULANDO
+}
+
+model Setor {
+  numero              Int            @id
+  nome                String
+  coordenadorNome     String?        @map("coordenador_nome")
+  coordenadorTelefone String?        @map("coordenador_telefone")
+  corHex              String?        @map("cor_hex")
+
+  bairros             Bairro[]
+  usuarios            Usuario[]
+  cultos              CultoNoLar[]
+  convites            ConviteConta[]
+
+  @@map("setores")
+}
+
+model Bairro {
+  id          Int      @id @default(autoincrement())
+  setorNumero Int      @map("setor_numero")
+  nome        String
+  latitude    Decimal? @db.Decimal(10, 8)
+  longitude   Decimal? @db.Decimal(11, 8)
+
+  setor       Setor    @relation(fields: [setorNumero], references: [numero])
+
+  @@map("bairros")
+}
+
+model Pessoa {
+  id          String        @id @default(uuid())
+  nome        String
+  telefone    String?
+  email       String?
+  tipoVinculo TipoVinculo   @default(MEMBRO_ATIVO) @map("tipo_vinculo")
+  endereco    String?
+  bairro      String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  usuario     Usuario?
+  presencas   PresencaCulto[]
+  convites    ConviteConta[]
+
+  @@map("pessoas")
+}
+
+model Usuario {
+  id                  String             @id @default(uuid())
+  pessoaId            String?            @unique @map("pessoa_id")
+  email               String             @unique
+  senhaHash           String             @map("senha_hash")
+  role                Role               @default(LIDER)
+  setorNumero         Int?               @map("setor_numero")
+  ativo               Boolean            @default(true)
+  createdAt           DateTime           @default(now()) @map("created_at")
+
+  pessoa              Pessoa?            @relation(fields: [pessoaId], references: [id])
+  setor               Setor?             @relation(fields: [setorNumero], references: [numero])
+  refreshTokens       RefreshToken[]
+  cultosLiderados     CultoNoLar[]       @relation("LiderCulto")
+  cultosCriados       CultoNoLar[]       @relation("CriadorCulto")
+  fotosEnviadas       FotoCulto[]
+  decisoesRegistradas DecisaoEspiritual[]
+  convitesCriados     ConviteConta[]     @relation("CriadorConvite")
+
+  @@map("usuarios")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  usuarioId String   @map("usuario_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  revogado  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model CultoNoLar {
+  id                  String              @id @default(uuid())
+  numeroSequencial    Int?                @unique @map("numero_sequencial")
+  campanha            String              @default("11 Anos - 120 Cultos nos Lares")
+  setorNumero         Int                 @map("setor_numero")
+  bairro              String
+  rua                 String
+  numero              String
+  pontoReferencia     String?             @map("ponto_referencia")
+  latitude            Decimal?            @db.Decimal(10, 8)
+  longitude           Decimal?            @db.Decimal(11, 8)
+  mapaX               Decimal?            @map("mapa_x") @db.Decimal(8, 2)
+  mapaY               Decimal?            @map("mapa_y") @db.Decimal(8, 2)
+
+  liderUsuarioId      String?             @map("lider_usuario_id")
+  liderNome           String              @map("lider_nome")
+  liderTelefone       String              @map("lider_telefone")
+
+  anfitriaoUsuarioId  String?             @map("anfitriao_usuario_id")
+  anfitriaoNome       String              @map("anfitriao_nome")
+  anfitriaoTelefone   String              @map("anfitriao_telefone")
+
+  horarioInicio       String              @default("19:30") @map("horario_inicio")
+  dataRealizacao      DateTime            @default(now()) @map("data_realizacao")
+  status              StatusCulto         @default(PLANEJADO)
+  observacoes         String?             @db.Text
+  versao              Int                 @default(1)
+  criadoPorId         String?             @map("criado_por_id")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+
+  setor               Setor               @relation(fields: [setorNumero], references: [numero])
+  liderUsuario        Usuario?            @relation("LiderCulto", fields: [liderUsuarioId], references: [id])
+  criadoPor           Usuario?            @relation("CriadorCulto", fields: [criadoPorId], references: [id])
+  presencas           PresencaCulto[]
+  decisoes            DecisaoEspiritual[]
+  fotos               FotoCulto[]
+
+  @@map("cultos_no_lar")
+}
+
+model PresencaCulto {
+  id                String              @id @default(uuid())
+  cultoId           String              @map("culto_id")
+  pessoaId          String?             @map("pessoa_id")
+  nomeParticipante  String              @map("nome_participante")
+  telefone          String?
+  eMembro           Boolean             @default(false) @map("e_membro")
+  presente          Boolean             @default(true)
+  checkinEm         DateTime            @default(now()) @map("checkin_em")
+
+  culto             CultoNoLar          @relation(fields: [cultoId], references: [id], onDelete: Cascade)
+  pessoa            Pessoa?             @relation(fields: [pessoaId], references: [id])
+  decisoes          DecisaoEspiritual[]
+
+  @@map("presencas_culto")
+}
+
+model DecisaoEspiritual {
+  id                   String            @id @default(uuid())
+  cultoId              String            @map("culto_id")
+  presencaId           String?           @map("presenca_id")
+  nomeDecidido         String            @map("nome_decidido")
+  telefone             String?
+  tipoDecisao          TipoDecisao       @default(ACEITOU_JESUS) @map("tipo_decisao")
+  pedidoOracaoDetalhe  String?           @map("pedido_oracao_detalhe") @db.Text
+  statusDiscipulado    StatusDiscipulado @default(PENDENTE) @map("status_discipulado")
+  registradoPorId      String?           @map("registrado_por_id")
+  createdAt            DateTime          @default(now()) @map("created_at")
+
+  culto                CultoNoLar        @relation(fields: [cultoId], references: [id], onDelete: Cascade)
+  presenca             PresencaCulto?    @relation(fields: [presencaId], references: [id])
+  registradoPor        Usuario?          @relation(fields: [registradoPorId], references: [id])
+
+  @@map("decisoes_espirituais")
+}
+
+model FotoCulto {
+  id                 String     @id @default(uuid())
+  cultoId            String     @map("culto_id")
+  s3Key              String     @map("s3_key")
+  urlPublica         String     @map("url_publica")
+  nomeOriginal       String     @map("nome_original")
+  mimeType           String     @map("mime_type")
+  tamanhoBytes       BigInt     @map("tamanho_bytes")
+  legenda            String?
+  aprovadoParaTelao  Boolean    @default(false) @map("aprovado_para_telao")
+  enviadoPorId       String?    @map("enviado_por_id")
+  createdAt          DateTime   @default(now()) @map("created_at")
+
+  culto              CultoNoLar @relation(fields: [cultoId], references: [id], onDelete: Cascade)
+  enviadoPor         Usuario?   @relation(fields: [enviadoPorId], references: [id])
+
+  @@map("fotos_culto")
+}
+
+model ConviteConta {
+  id                   String     @id @default(uuid())
+  tokenHash            String     @unique @map("token_hash")
+  tipoPapel            Role       @map("tipo_papel")
+  setorNumero          Int        @map("setor_numero")
+  pessoaId             String?    @map("pessoa_id")
+  telefoneDestinatario String?    @map("telefone_destinatario")
+  nomeDestinatario     String?    @map("nome_destinatario")
+  expiraEm             DateTime   @map("expira_em")
+  utilizado            Boolean    @default(false)
+  criadoPorId          String?    @map("criado_por_id")
+  createdAt            DateTime   @default(now()) @map("created_at")
+
+  setor                Setor      @relation(fields: [setorNumero], references: [numero])
+  pessoa               Pessoa?    @relation(fields: [pessoaId], references: [id])
+  criadoPor            Usuario?   @relation("CriadorConvite", fields: [criadoPorId], references: [id])
+
+  @@map("convites_conta")
+}
