@@ -1,13 +1,13 @@
-# 🍞 Pão da Vida - 120 Cultos nos Lares (11 Anos)
+# 🍞 Pão da Vida - 120 Cultos nos Lares (Backend API)
 
-[![CI Pipeline](https://github.com/TiagoFerr/pao-da-vida-11-anos/actions/workflows/ci.yml/badge.svg)](https://github.com/TiagoFerr/pao-da-vida-11-anos/actions/workflows/ci.yml)
+[![CI Pipeline](https://github.com/TiagoFerr/pao-da-vida-11-anos-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/TiagoFerr/pao-da-vida-11-anos-backend/actions/workflows/ci.yml)
 [![Node.js Version](https://img.shields.io/badge/Node.js-v22-green.svg)](https://nodejs.org/)
 [![NestJS](https://img.shields.io/badge/Framework-NestJS-red.svg)](https://nestjs.com/)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%2016-blue.svg)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Cache%20%26%20Events-Redis%207-darkred.svg)](https://redis.io/)
 [![MinIO S3](https://img.shields.io/badge/Storage-MinIO%20S3-orange.svg)](https://min.io/)
 
-Sistema de gestão territorial, acompanhamento em tempo real e consolidação de membros para o evento comemorativo de **11 Anos da Igreja Pão da Vida** em Mossoró - RN.
+API RESTful de alta performance, gestão territorial e streaming em tempo real para os **11 Anos da Igreja Pão da Vida** em Mossoró - RN.
 
 > *"Crescer & Edificar"* — **Efésios 4:16**  
 > **Data do Evento:** 19 de Novembro de 2026  
@@ -17,7 +17,7 @@ Sistema de gestão territorial, acompanhamento em tempo real e consolidação de
 
 ## 🏛️ Arquitetura & Engenharia de Software
 
-O projeto adota os princípios de **Clean Architecture & Domain-Driven Design (DDD)** em Node.js com TypeScript, projetado para alta escalabilidade, desacoplamento e deploy direto em VPS.
+O backend adota os princípios de **Clean Architecture & Domain-Driven Design (DDD)** em Node.js com TypeScript, projetado para alta escalabilidade, desacoplamento e deploy direto em VPS.
 
 * 📄 **[Blueprint Completo de Arquitetura (ARQUITETURA_DO_SISTEMA.md)](./ARQUITETURA_DO_SISTEMA.md)**
 * 📄 **[Análise e Modelagem Territorial Inicial (ANALISE_E_MODELAGEM_PROJETO.md)](./ANALISE_E_MODELAGEM_PROJETO.md)**
@@ -32,24 +32,21 @@ O projeto adota os princípios de **Clean Architecture & Domain-Driven Design (D
 
 ---
 
-## 📂 Estrutura do Repositório
+## 📂 Estrutura do Repositório (Backend Dedicado)
 
 ```
-pao-da-vida-11-anos/
+pao-da-vida-11-anos-backend/
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                 # Integração Contínua (Lint, TypeCheck, Testes, Build)
 │       └── cd.yml                 # Deploy Contínuo na VPS via SSH
 │
-├── backend/                       # API REST Modular NestJS
-│   ├── src/                       # Clean Architecture (Core, Application, Infra, Presentation)
-│   ├── prisma/                    # Schema PostgreSQL e Migrations
-│   ├── test/                      # Testes Unitários e de Integração
-│   ├── Dockerfile                 # Imagem multi-stage de produção
-│   └── docker-compose.yml         # Ambiente local (Postgres 16 + Redis 7)
-│
-├── frontend/                      # Aplicação Web dos Cultos no Lar
+├── src/                           # Clean Architecture (Core, Application, Infra, Presentation)
+├── prisma/                        # Schema PostgreSQL e Migrations
+├── test/                          # Testes Unitários e de Integração
 ├── legacy/                        # Protótipos e referências iniciais
+├── Dockerfile                     # Imagem multi-stage de produção
+├── docker-compose.yml             # Ambiente local (Postgres 16 + Redis 7)
 ├── ARQUITETURA_DO_SISTEMA.md      # Especificação arquitetural de referência
 └── README.md
 ```
@@ -64,13 +61,12 @@ pao-da-vida-11-anos/
 
 ### 1. Clonar o Repositório
 ```bash
-git clone https://github.com/TiagoFerr/pao-da-vida-11-anos.git
-cd pao-da-vida-11-anos
+git clone https://github.com/TiagoFerr/pao-da-vida-11-anos-backend.git
+cd pao-da-vida-11-anos-backend
 ```
 
 ### 2. Subir os Serviços Locais (PostgreSQL + Redis)
 ```bash
-cd backend
 docker compose up -d
 ```
 
