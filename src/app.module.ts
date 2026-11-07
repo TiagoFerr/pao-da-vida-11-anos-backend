@@ -4,6 +4,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { SetoresModule } from './setores/setores.module';
 import { AuthModule } from './auth/auth.module';
 import { ConvitesModule } from './convites/convites.module';
+import { CultosModule } from './cultos/cultos.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { ConvitesModule } from './convites/convites.module';
     SetoresModule,
     AuthModule,
     ConvitesModule,
+    CultosModule,
   ],
   controllers: [],
   providers: [],
