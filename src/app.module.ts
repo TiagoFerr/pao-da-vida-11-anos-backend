@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { SetoresModule } from './setores/setores.module';
+import { AuthModule } from './auth/auth.module';
+import { ConvitesModule } from './convites/convites.module';
 
 @Module({
   imports: [
@@ -10,6 +12,8 @@ import { SetoresModule } from './setores/setores.module';
     }),
     PrismaModule,
     SetoresModule,
+    AuthModule,
+    ConvitesModule,
   ],
   controllers: [],
   providers: [],
