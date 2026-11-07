@@ -5,6 +5,8 @@ import { SetoresModule } from './setores/setores.module';
 import { AuthModule } from './auth/auth.module';
 import { ConvitesModule } from './convites/convites.module';
 import { CultosModule } from './cultos/cultos.module';
+import { PresencasModule } from './presencas/presencas.module';
+import { DecisoesModule } from './decisoes/decisoes.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { CultosModule } from './cultos/cultos.module';
     AuthModule,
     ConvitesModule,
     CultosModule,
+    PresencasModule,
+    DecisoesModule,
   ],
   controllers: [],
   providers: [],
