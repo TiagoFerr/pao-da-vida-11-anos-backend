@@ -8,6 +8,7 @@ import { CultosModule } from './cultos/cultos.module';
 import { PresencasModule } from './presencas/presencas.module';
 import { DecisoesModule } from './decisoes/decisoes.module';
 import { SseModule } from './sse/sse.module';
+import { FotosModule } from './fotos/fotos.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SseModule } from './sse/sse.module';
     PresencasModule,
     DecisoesModule,
     SseModule,
+    FotosModule,
   ],
   controllers: [],
   providers: [],
