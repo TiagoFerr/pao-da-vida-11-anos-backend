@@ -3,8 +3,10 @@ import {
   NotFoundException,
   ForbiddenException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SseService } from '../sse/sse.service';
 import { CriarDecisaoDto } from './dto/criar-decisao.dto';
 import { AtualizarDiscipuladoDto } from './dto/atualizar-discipulado.dto';
 import { FiltrarDecisoesDto } from './dto/filtrar-decisoes.dto';
@@ -20,7 +22,10 @@ import { Role, StatusDiscipulado, TipoDecisao, Prisma } from '@prisma/client';
 export class DecisoesService {
   private readonly logger = new Logger(DecisoesService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly sseService?: SseService,
+  ) {}
 
   async registrarDecisao(
     cultoId: string,
@@ -78,6 +83,18 @@ export class DecisoesService {
     this.logger.log(
       `Decisão espiritual registrada: ${decisao.nomeDecidido} (${decisao.tipoDecisao}) no Culto #${culto.numeroSequencial || culto.id} por ${autor.email}`,
     );
+
+    this.sseService?.emitirVidaParaCristo({
+      decisaoId: decisao.id,
+      cultoId: decisao.cultoId,
+      numeroSequencial: decisao.culto.numeroSequencial,
+      setorNumero: decisao.culto.setorNumero,
+      setorNome: decisao.culto.setor.nome,
+      bairro: decisao.culto.bairro,
+      nomeDecidido: decisao.nomeDecidido,
+      tipoDecisao: decisao.tipoDecisao,
+      liderNome: decisao.culto.liderNome,
+    });
 
     return this.mapToResponse(decisao);
   }

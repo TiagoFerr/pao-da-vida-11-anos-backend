@@ -7,6 +7,7 @@ import { ConvitesModule } from './convites/convites.module';
 import { CultosModule } from './cultos/cultos.module';
 import { PresencasModule } from './presencas/presencas.module';
 import { DecisoesModule } from './decisoes/decisoes.module';
+import { SseModule } from './sse/sse.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { DecisoesModule } from './decisoes/decisoes.module';
     CultosModule,
     PresencasModule,
     DecisoesModule,
+    SseModule,
   ],
   controllers: [],
   providers: [],

@@ -4,8 +4,10 @@ import {
   ForbiddenException,
   ConflictException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SseService } from '../sse/sse.service';
 import { CriarCultoDto } from './dto/criar-culto.dto';
 import { AtualizarCultoDto } from './dto/atualizar-culto.dto';
 import { AtualizarStatusCultoDto } from './dto/atualizar-status-culto.dto';
@@ -22,7 +24,10 @@ import { Prisma } from '@prisma/client';
 export class CultosService {
   private readonly logger = new Logger(CultosService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly sseService?: SseService,
+  ) {}
 
   async criar(
     autor: AuthenticatedUser,
@@ -125,6 +130,18 @@ export class CultosService {
     this.logger.log(
       `Novo Culto no Lar cadastrado: #${culto.numeroSequencial} em ${culto.bairro} (Setor ${culto.setorNumero}) por ${autor.email}`,
     );
+
+    this.sseService?.emitirCultoCadastrado({
+      cultoId: culto.id,
+      numeroSequencial: culto.numeroSequencial,
+      setorNumero: culto.setorNumero,
+      setorNome: culto.setor.nome,
+      bairro: culto.bairro,
+      rua: culto.rua,
+      numero: culto.numero,
+      liderNome: culto.liderNome,
+      anfitriaoNome: culto.anfitriaoNome,
+    });
 
     return this.mapToResponse(culto);
   }
@@ -396,6 +413,14 @@ export class CultosService {
     this.logger.log(
       `Status do Culto #${atualizado.numeroSequencial} alterado para ${dto.status} por ${autor.email}`,
     );
+
+    this.sseService?.emitirStatusCultoAlterado({
+      cultoId: atualizado.id,
+      numeroSequencial: atualizado.numeroSequencial,
+      setorNumero: atualizado.setorNumero,
+      status: atualizado.status,
+      liderNome: atualizado.liderNome,
+    });
 
     return this.mapToResponse(atualizado);
   }
