@@ -1,14 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  HeadBucketCommand,
+  CreateBucketCommand,
+  PutBucketPolicyCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
-export class StorageService {
+export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
   private readonly s3Client: S3Client;
   private readonly bucket: string;
@@ -47,6 +50,46 @@ export class StorageService {
       },
       forcePathStyle: true, // Obrigatório para MinIO compatível com S3
     });
+  }
+
+  async onModuleInit() {
+    await this.garantirBucketExiste();
+  }
+
+  private async garantirBucketExiste() {
+    try {
+      const head = new HeadBucketCommand({ Bucket: this.bucket });
+      await this.s3Client.send(head);
+      this.logger.log(`Bucket MinIO "${this.bucket}" verificado com sucesso.`);
+    } catch {
+      try {
+        const create = new CreateBucketCommand({ Bucket: this.bucket });
+        await this.s3Client.send(create);
+        this.logger.log(`Bucket MinIO "${this.bucket}" criado automaticamente com sucesso!`);
+
+        // Define política pública de leitura (download anônimo) para o bucket de fotos
+        const publicReadPolicy = {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: '*',
+              Action: ['s3:GetObject'],
+              Resource: [`arn:aws:s3:::${this.bucket}/*`],
+            },
+          ],
+        };
+
+        const policyCommand = new PutBucketPolicyCommand({
+          Bucket: this.bucket,
+          Policy: JSON.stringify(publicReadPolicy),
+        });
+        await this.s3Client.send(policyCommand);
+        this.logger.log(`Política pública de download aplicada ao bucket "${this.bucket}".`);
+      } catch (err: any) {
+        this.logger.warn(`Tentativa de inicializar bucket "${this.bucket}": ${err.message}`);
+      }
+    }
   }
 
   async gerarPresignedUploadUrl(

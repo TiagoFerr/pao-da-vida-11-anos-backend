@@ -1,6 +1,7 @@
-version: '3.8'
-
 services:
+  # ========================================================
+  # 1. Banco de Dados Relacional: PostgreSQL 16
+  # ========================================================
   postgres:
     image: postgres:16-alpine
     container_name: pao-da-vida-postgres
@@ -10,40 +11,96 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
       POSTGRES_DB: ${POSTGRES_DB:-pao_da_vida_cultos}
     ports:
-      - '${POSTGRES_PORT:-5432}:5432'
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-pao_da_vida_cultos}']
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-pao_da_vida_cultos}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - app-network
 
+  # ========================================================
+  # 2. Cache, Sessões & Pub/Sub SSE: Redis 7
+  # ========================================================
   redis:
     image: redis:7-alpine
     container_name: pao-da-vida-redis
     restart: unless-stopped
     command: redis-server --appendonly yes
     ports:
-      - '${REDIS_PORT:-6379}:6379'
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - app-network
+
+  # ========================================================
+  # 3. Object Storage S3: MinIO (Galeria de Fotos dos Lares)
+  # ========================================================
+  minio:
+    image: pgsty/minio:latest
+    container_name: pao-da-vida-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ========================================================
+  # 4. Backend API: NestJS
+  # ========================================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pao-da-vida-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      API_PREFIX: api/v1
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres123}@postgres:5432/${POSTGRES_DB:-pao_da_vida_cultos}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-chave-secreta-jwt-pao-da-vida-11-anos-crescer-edificar-2026}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-chave-refresh-secreta-pao-da-vida-11-anos-2026}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: cultos-fotos
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:8080/cultos-fotos}
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
 
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
+  minio_data:
+    driver: local
 
 networks:
-  app-network:
-    driver: bridge
+  default:
+    name: pao-da-vida-network

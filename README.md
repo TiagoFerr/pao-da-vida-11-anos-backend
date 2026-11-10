@@ -53,27 +53,42 @@ pao-da-vida-11-anos-backend/
 
 ---
 
-## 🚀 Como Executar Localmente
+## 🚀 Como Executar com Docker (VPS ou Produção)
 
-### Pré-requisitos
-* Node.js v22+
-* Docker & Docker Compose
+O backend possui configuração pronta para subir toda a stack em contêineres Docker independentes:
+* **NestJS API** (Node 22 Alpine, com migrations e seed automático)
+* **PostgreSQL 16** (Persistência relacional)
+* **Redis 7** (Cache, sessões e SSE Pub/Sub)
+* **MinIO S3** (Object Storage com inicialização automática de bucket público)
 
-### 1. Clonar o Repositório
+### 1. Na VPS (Standalone)
+
 ```bash
-git clone https://github.com/TiagoFerr/pao-da-vida-11-anos-backend.git
-cd pao-da-vida-11-anos-backend
+# Na pasta do repositório backend na VPS:
+cp .env.docker.example .env
+
+# Subir a stack completa no Docker
+docker compose up -d --build
 ```
 
-### 2. Subir os Serviços Locais (PostgreSQL + Redis)
+A stack cria automaticamente a rede Docker compartilhada `pao-da-vida-network`, permitindo que o contêiner do frontend se comunique diretamente com a API.
+
+A documentação interativa Swagger estará disponível em: `http://SEU_IP_OU_DOMINIO:3000/api/docs`
+
+---
+
+## 🛠️ Desenvolvimento Local (Sem Docker para Node)
+
+### 1. Subir Apenas a Infraestrutura (PostgreSQL + Redis + MinIO)
 ```bash
-docker compose up -d
+docker compose up -d postgres redis minio
 ```
 
-### 3. Instalar Dependências e Rodar Migrations
+### 2. Instalar Dependências e Iniciar API
 ```bash
 npm install
-npx prisma migrate dev
+npx prisma db push
+npm run prisma:seed
 npm run start:dev
 ```
 

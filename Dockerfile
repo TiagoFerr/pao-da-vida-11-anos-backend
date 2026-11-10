@@ -5,8 +5,8 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Dependências necessárias para pacotes nativos (argon2, etc.)
-RUN apk add --no-cache libc6-compat python3 make g++
+# Dependências necessárias para pacotes nativos (argon2, Prisma, openssl)
+RUN apk add --no-cache libc6-compat python3 make g++ openssl
 
 # Copia descritores e schema do Prisma
 COPY package*.json ./
@@ -33,8 +33,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Dependências do sistema (curl para healthcheck, libc6-compat para argon2)
-RUN apk add --no-cache curl libc6-compat
+# Dependências do sistema (curl para healthcheck, libc6-compat para argon2, openssl para Prisma)
+RUN apk add --no-cache curl libc6-compat openssl
 
 # Copia arquivos do builder
 COPY --from=builder /app/package*.json ./
@@ -49,4 +49,4 @@ RUN chmod +x ./docker-entrypoint.sh
 EXPOSE 3000
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
