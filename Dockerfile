@@ -5,30 +5,27 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies required for building native packages (if any)
-RUN apk add --no-cache libc6-compat
+# Dependências necessárias para pacotes nativos (argon2, etc.)
+RUN apk add --no-cache libc6-compat python3 make g++
 
-# Copy package descriptors and prisma schema
+# Copia descritores e schema do Prisma
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
+# Instala dependências completas
 RUN npm ci
 
-# Copy full source
+# Copia código-fonte
 COPY . .
 
-# Generate Prisma Client
+# Gera Prisma Client
 RUN npx prisma generate
 
 # Build TypeScript / NestJS
 RUN npm run build
 
-# Prune devDependencies to keep production bundle small
-RUN npm prune --omit=dev
-
 # ==========================================
-# STAGE 2: Runner (Production)
+# STAGE 2: Runner (Produção Otimizada)
 # ==========================================
 FROM node:22-alpine AS runner
 
@@ -36,18 +33,20 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Install curl for docker healthcheck
-RUN apk add --no-cache curl
+# Dependências do sistema (curl para healthcheck, libc6-compat para argon2)
+RUN apk add --no-cache curl libc6-compat
 
-# Create non-root user
-USER node
+# Copia arquivos do builder
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
 
-# Copy production artifacts from builder
-COPY --chown=node:node --from=builder /app/package*.json ./
-COPY --chown=node:node --from=builder /app/node_modules ./node_modules
-COPY --chown=node:node --from=builder /app/dist ./dist
-COPY --chown=node:node --from=builder /app/prisma ./prisma
+# Garante permissão de execução no script de entrypoint
+RUN chmod +x ./docker-entrypoint.sh
 
 EXPOSE 3000
 
+ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["node", "dist/main.js"]
